@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Board / Exec Dashboard (Template)</title>
+<style>
+
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --wash:rgba(11,11,11,.045);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --neg:#e34948; --mid:#f0efec; --good:#006300; --warn:#b26a00;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --notice-bg:#14284b; --notice-ink:#ffffff; --notice-sub:#c9d6ee;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --wash:rgba(255,255,255,.06);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neg:#e66767; --mid:#383835; --good:#0ca30c; --warn:#e0a030;
+  --notice-bg:#1f3a6b; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#ffffff; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --wash:rgba(255,255,255,.06);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --neg:#e66767; --mid:#383835; --good:#0ca30c; --warn:#e0a030;
+  --notice-bg:#1f3a6b; color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--plane);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1120px;margin-inline:auto;min-width:0}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{text-wrap:balance}
+.notice{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--notice-bg);color:var(--notice-ink);margin-inline:-16px;padding:9px 16px}
+.notice .in{max-width:1120px;margin-inline:auto;display:flex;gap:10px 14px;flex-wrap:wrap;align-items:baseline}
+.notice b{font-size:13px;letter-spacing:.01em}
+.notice span{color:var(--notice-sub);font-size:12.5px}
+.tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:3px;padding:1px 6px;color:var(--notice-ink)}
+nav.bar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 41px);z-index:20;background:var(--plane);margin-inline:-16px;padding:8px 16px;border-bottom:1px solid var(--grid)}
+nav.bar .in{max-width:1120px;margin-inline:auto;display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.links{display:flex;gap:2px 4px;flex-wrap:wrap}
+.links a{color:var(--ink2);text-decoration:none;font-size:12.5px;padding:4px 8px;border-radius:5px}
+.links a:hover,.links a:focus-visible{background:var(--wash);color:var(--ink);outline:none}
+.seg{display:inline-flex;border:1px solid var(--ring);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-size:12px;background:transparent;color:var(--ink2);border:0;padding:5px 10px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--ring)}
+.seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+.seg button:focus-visible,.btn:focus-visible,.cell:focus-visible,input:focus-visible{outline:2px solid var(--s1);outline-offset:1px}
+header.top{padding-block:28px 8px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px 40px;align-items:end}
+header.top .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+header.top h1{font-size:30px;line-height:1.15;font-weight:650;letter-spacing:-.01em}
+header.top p.lede{color:var(--ink2);margin-top:10px;max-width:56ch}
+.hero{border-left:3px solid var(--s1);padding-left:16px}
+.hero .big{font-size:56px;line-height:1;font-weight:650;letter-spacing:-.02em}
+.hero .yoy{font-size:26px;font-weight:600;letter-spacing:0;white-space:nowrap}.hero .yoy.up{color:var(--good)}.hero .yoy.dn{color:var(--neg)}
+.hero .fn{color:var(--muted);font-size:12.5px;margin-top:4px;max-width:46ch}
+.hero .cap{color:var(--ink2);margin-top:6px;max-width:44ch}
+.hero .chk{display:flex;flex-wrap:wrap;gap:6px 28px;margin-top:12px}.hero .chk .k{display:block;color:var(--ink2);font-size:12px}.hero .chk b{display:block;font-size:26px;line-height:1.15;font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-block:20px 8px}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:12px 14px;min-width:0}
+.tile .l{color:var(--ink2);font-size:12px}
+.tile .v{font-size:24px;font-weight:650;margin-top:2px;letter-spacing:-.01em}
+.tile .chip{display:block;margin-top:8px;font-size:12px;font-weight:600;color:var(--ink);border:1px solid;border-radius:8px;padding:5px 9px;line-height:1.3}.tile .chip.green{background:color-mix(in srgb,var(--good) 20%,var(--surface));border-color:var(--good)}.tile .chip.amber{background:color-mix(in srgb,var(--warn) 24%,var(--surface));border-color:var(--warn)}.tile .chip.red{background:color-mix(in srgb,var(--neg) 20%,var(--surface));border-color:var(--neg)}.tile .spark{display:block;margin-top:8px}
+.tile .d{color:var(--muted);font-size:12px;margin-top:2px}
+section{padding-top:36px;scroll-margin-top:100px}
+section>h2{font-size:21px;line-height:1.25;font-weight:650;max-width:34em}
+section>.sub{color:var(--ink2);margin-top:6px;max-width:68ch}
+.grid{display:grid;gap:14px;margin-top:16px}
+.g2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2e{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:8px;padding:14px 16px;min-width:0}
+.card h3{font-size:14px;font-weight:650;line-height:1.3}
+.card .s{color:var(--ink2);font-size:12px;margin-top:2px}
+.card .hd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.btn{font:inherit;font-size:11.5px;color:var(--ink2);background:transparent;border:1px solid var(--ring);border-radius:5px;padding:3px 8px;cursor:pointer;flex:none}
+.btn:hover{background:var(--wash)}
+.plot{margin-top:10px;min-width:0}
+.plot svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:12px;color:var(--ink2)}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.legend i.b{height:9px;border:0;width:9px;border-radius:2px;vertical-align:baseline;margin-right:6px}
+.tw{overflow-x:auto;margin-top:10px;max-height:340px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--ink2);font-weight:600;position:sticky;top:0;background:var(--surface)}
+td.num,th.num{font-variant-numeric:tabular-nums}
+h3.lev{font-size:15px;margin:22px 0 8px;font-weight:650}
+.note{color:var(--muted);font-size:11.5px;margin-top:8px}
+.tt{position:fixed;z-index:50;pointer-events:none;background:var(--surface);border:1px solid var(--ring);border-radius:6px;padding:8px 10px;box-shadow:0 6px 20px rgba(0,0,0,.14);font-size:12px;min-width:140px;max-width:260px}
+.tt .t{color:var(--ink2);margin-bottom:4px}
+.tt .r{display:flex;align-items:center;gap:8px;margin-top:2px}
+.tt .r i{width:12px;border-top:2px solid;flex:none}
+.tt .r b{font-weight:650;margin-left:auto;padding-left:10px;font-variant-numeric:tabular-nums}
+.findings{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:12px;margin-top:18px}
+.f{border-top:2px solid var(--ink);padding-top:8px;min-width:0}
+.f b{display:block;font-size:13.5px;line-height:1.3}
+.f span{display:block;color:var(--ink2);font-size:12.5px;margin-top:4px}
+.dec td,.dec th{text-align:left;white-space:normal;vertical-align:top;padding:7px 8px}
+.dec td:first-child{font-weight:600;white-space:nowrap}
+.pill{display:inline-block;font-size:11px;border:1px solid var(--ring);border-radius:10px;padding:1px 8px;color:var(--ink2);white-space:nowrap}
+.heat{display:grid;grid-template-columns:98px repeat(4,minmax(0,1fr));gap:2px;font-size:12px;margin-top:10px}
+.heat .h{color:var(--ink2);font-size:11.5px;padding:2px 4px;text-align:center}
+.heat .rl{color:var(--ink2);padding:5px 4px;white-space:nowrap;font-size:11.5px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px}
+.heat .rl small{color:var(--muted)}
+.cell{padding:5px 2px;text-align:center;border-radius:2px;font-variant-numeric:tabular-nums;min-height:28px;display:flex;align-items:center;justify-content:center}
+.cell.na{background:transparent;color:var(--muted)}
+.cell.hl{box-shadow:inset 0 0 0 2px var(--ink)}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 22px;margin-top:12px}
+.ctl label{display:block;font-size:12px;color:var(--ink2)}
+.ctl label b{color:var(--ink);font-weight:650;float:right;font-variant-numeric:tabular-nums}
+.ctl input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--s1)}
+.verdict{display:inline-block;font-size:11.5px;font-weight:650;padding:2px 8px;border-radius:10px;border:1px solid currentColor}
+.mislead{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px 18px;margin-top:10px}
+.mislead div{border-top:1px solid var(--grid);padding-top:8px;font-size:12.5px;color:var(--ink2)}
+.mislead b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+
+.rec h3{margin:8px 0 4px}.rec p{font-size:13px;color:var(--ink2);margin-top:6px}.rec ul{margin:6px 0 0 18px;padding:0;font-size:13px;color:var(--ink2)}.rec li{margin-top:3px}
+.rec .tagrec{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--s1);border:1px solid var(--s1);border-radius:10px;padding:1px 8px}
+.est{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:1px 8px;margin-left:8px;vertical-align:middle}
+.tw table td.l{text-align:left;white-space:normal}.mislead,#saNote,#armGap{display:none}.tw th.l{text-align:left}#recPlat{display:block}#recPlat::first-letter{text-transform:uppercase}header.top{display:block;text-align:center}header.top h1{font-size:26px}.hero{border-left:0;padding-left:0;margin-top:22px}.hero .fn,.hero .cap{margin-inline:auto;max-width:60ch}.hero .chk{justify-content:center}.hero .big{font-size:76px}.findings{grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;margin-top:26px}.f.good{border-top-color:var(--good)}.f.bad{border-top-color:var(--neg)}.f .ic{font-style:normal;font-weight:800;margin-right:6px}.f.good .ic{color:var(--good)}.f.bad .ic{color:var(--neg)}.stp{display:inline-block;font-size:11.5px;font-weight:650;padding:1px 9px;border-radius:10px;border:1px solid}.stp.green{color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--surface))}.stp.amber{color:var(--warn);background:color-mix(in srgb,var(--warn) 22%,var(--surface))}.stp.red{color:var(--neg);background:color-mix(in srgb,var(--neg) 18%,var(--surface))}
+.tw table td.hm{text-align:center;font-variant-numeric:tabular-nums;font-weight:600}.tw table td.hm small{display:block;font-weight:400;font-size:11px;opacity:.85}
+footer{margin-top:44px;padding-top:14px;border-top:1px solid var(--grid);color:var(--muted);font-size:12px}
+@media (max-width:820px){header.top{grid-template-columns:minmax(0,1fr)}.g2,.g3,.g2e{grid-template-columns:minmax(0,1fr)}.hero .big{font-size:46px}nav.bar{top:calc(env(safe-area-inset-top,0px) + 62px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body>
+<div class="notice"><div class="in"><span class="tag">Illustrative</span><b>Brightwater Cloud is a fictional company.</b><span>All figures are made-up sample data created to show the format. Not derived from any real company.</span></div></div>
+<nav class="bar"><div class="in">
+  <div class="links"><a href="#recs">Calls to action</a><a href="#arr">ARR</a><a href="#eff">Efficiency</a><a href="#fun">Funnel</a><a href="#str">Unit economics</a><a href="#acv">Customer size</a><a href="#ramp">Ramp</a><a href="#scen">Next-year envelope</a><a href="#how">How it is built</a></div>
+</div></nav>
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Brightwater Cloud (fictional) · usage-based workflow platform · illustrative data through Jun-26</div>
+  <h1>Board / Exec Dashboard (Template)</h1>
+  <div class="hero"><div class="big"><span id="heroNum"></span> <span class="yoy" id="heroYoy"></span></div><p class="cap"><b>ARR, Jun-26</b></p><div class="chk" role="group" aria-label="Honesty checks"><div><span class="k">Net revenue retention</span><b id="heroNrr"></b></div><div><span class="k">Gross revenue retention</span><b id="heroGrr"></b></div></div><p class="fn" id="heroFn"></p></div>
+</header>
+<div class="findings" id="findings"></div>
+
+<section id="recs">
+  <div class="card rec" id="recHead" style="margin-bottom:14px"><span class="tagrec">Headline recommendation</span>
+    <h3>Separate noise from the natural course of growth</h3>
+    <p>Unit economics move in phases: costly first dollars, cheaper with attach, costlier again upmarket. Act only on moves that persist for two or more quarters after adjusting for mix.</p>
+    <div class="grid g2e"><div><p><b>Expected, should revert</b></p><ul id="recNat"></ul></div><div><p><b>Not explained by growth</b></p><ul id="recUnx"></ul></div></div></div>
+
+  <h2 style="margin-top:34px">Calls to action</h2>
+  <div class="card rec" id="recTrig"><span class="tagrec">Call to action 1</span>
+    <h3>Set triggers on unit economics, monitored by AI</h3>
+    <p><b>Ask:</b> adopt written triggers on each view below. Amber means check mix. Red pauses the next tranche of spend until the cause is explained.</p>
+    <div id="trigTbl"></div>
+    <p class="note">Proposed thresholds, to calibrate on history.</p></div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card rec"><span class="tagrec">Call to action 2</span><h3>Track GRR and NRR by cohort age and product</h3>
+      <p>Retention is only available in aggregate, and GRR has slipped about 3 points. Time to first value is not measured per customer.</p><p><b>Ask:</b> ARR by customer by month, tagged with product, start date and expansion, contraction or churn, plus the date of first value. That shows retention by cohort age and product and where the slide starts.</p></div>
+    <div class="card rec"><span class="tagrec">Call to action 3</span><h3>Split COGS and S&amp;M by revenue type</h3>
+      <p id="recPlat"></p><p><b>Ask:</b> tag COGS and S&amp;M by stream so margin, payback and LTV/CAC can be shown per stream.</p></div>
+    <div class="card rec"><span class="tagrec">Call to action 4</span><h3>Add rep and lead-source fields to the funnel</h3>
+      <p>The data cannot show whether a rep cohort or channel is weakening win rates.</p><p><b>Ask:</b> rep, hire date, source and campaign on every opportunity. Unlocks payback by rep cohort and channel.</p></div>
+  </div>
+
+  <h2 style="margin-top:34px">Spend decisions for the board</h2>
+  <div class="card"><div class="tw"><table>
+    <thead><tr><th class="l">Decision</th><th class="l">Proposed</th><th class="l">Why</th></tr></thead>
+    <tbody>
+    <tr><td class="l"><b>1. Payback bar</b></td><td class="l">Gate every S&amp;M increase on marginal CAC payback of 18 months or less, at gross margin</td><td class="l">Blended payback hides the cost of the next dollar</td></tr>
+    <tr><td class="l"><b>2. Next-year spend</b></td><td class="l">Release in tranches from $1.84M a month toward about $2.1M. Do not approve the aggressive position of $3.2M</td><td class="l">The measured plan pays back in about 18 months at the margin; the aggressive plan in about 23 and the extra spend saturates the channels. The magic number (1.2 today) is the cross-check</td></tr>
+    <tr><td class="l"><b>3. Triggers</b></td><td class="l">Adopt the triggers above. A Red trigger pauses the next tranche until the cause is explained</td><td class="l">Acts on drift before the bar is breached</td></tr>
+    <tr><td class="l"><b>4. Data and retention</b></td><td class="l">Fund the data fixes in Calls to action 2, 3 and 4, owned by Finance and RevOps, and review GRR and NRR by cohort each quarter</td><td class="l">Without them, retention, rep, channel and stream questions cannot be answered, and retention is a lever that spend alone cannot move</td></tr>
+    <tr><td class="l"><b>5. Reach opportunity</b></td><td class="l">Ring-fence a small share of the envelope, about 5%, for one novel bet, held outside the payback bar with its own success test</td><td class="l">New channels and products rarely pass a payback test early. A capped bet keeps the option on the next growth engine without loosening the bar on core spend</td></tr>
+    </tbody></table></div>
+    <p class="note">Proposals for discussion on illustrative data. Spend thresholds come from the explorer below.</p></div>
+</section>
+
+<div class="tiles" id="tiles" style="margin-top:30px"></div>
+
+<section id="arr"><h2>ARR is up 71% in a year, and expansion is the biggest source of growth</h2>
+  <div class="grid g2"><div class="card" id="c-arr"></div><div class="card" id="c-ret"></div></div>
+  <div class="card" id="c-bridge" style="margin-top:14px"></div></section>
+<section id="eff"><h2>Efficiency: each new dollar of ARR costs more to buy, and the magic number is falling</h2>
+  <div class="grid g2e"><div class="card" id="c-eff1"></div><div class="card" id="c-eff2"></div></div>
+  <div class="grid g2e"><div class="card" id="c-nn"></div><div class="card" id="c-magic"></div></div></section>
+<section id="fun"><h2>Funnel: win rate is slipping where proof-of-concept completion falls</h2>
+  <div class="grid g2"><div class="card" id="c-fun1"></div><div class="card" id="c-fun2"></div></div></section>
+<section id="str"><h2>Unit economics by revenue stream</h2>
+  <div class="card" id="c-str" style="margin-top:16px"></div></section>
+<section id="acv"><h2>Customer size: the average deal is up, the typical deal is down</h2>
+  <div class="card" id="c-acv" style="margin-top:16px"></div></section>
+<section id="ramp"><h2>Ramp: contracted vs live ARR</h2>
+  <p class="sub">A secondary view of time to value. The ARR on this page is live ARR. The gap to contracted ARR is mostly new customers still going live.</p>
+  <div class="grid g2"><div class="card" id="c-ramp"></div><div class="card" id="c-age"></div></div>
+  <div class="card" id="c-conv" style="margin-top:14px"></div></section>
+<section id="scen"><h2>Next-year envelope</h2>
+  <div class="card" style="margin-top:16px"><div class="ctl" id="ctl"></div><div class="note">A simple illustrative model: new ARR follows spend with a two-month lag and diminishing returns, and saturates above about $2.4M a month. The 115% NRR default sits between the 112% for customers older than 12 months and the 127% trailing aggregate; with GRR at 88.7% it implies about 26 points of expansion. New bookings convert to ARR at 91% by default (see the ramp panel).</div></div>
+  <div class="card" id="c-scen" style="margin-top:14px"></div><div class="card" id="c-scenT" style="margin-top:14px"></div></section>
+<section id="how"><h2>How this was built, and how I would build it for any company</h2>
+  <div class="grid g2e">
+    <div class="card rec"><span class="tagrec">The method</span>
+      <ol style="margin:10px 0 0 18px;padding:0;font-size:13px;color:var(--ink2)">
+        <li style="margin-top:4px"><b>Start from the decision.</b> What does the board need to approve? That sets the page, not the data available.</li>
+        <li style="margin-top:4px"><b>One headline number.</b> ARR, with its year-on-year growth, and two honesty checks directly under it: net and gross revenue retention (NRR and GRR).</li>
+        <li style="margin-top:4px"><b>Six insights, each marked good or bad.</b> A reader should know in 15 seconds what is working and what is not.</li>
+        <li style="margin-top:4px"><b>Separate noise from growth.</b> Say which moves are the natural course of scaling and should revert, and which are not explained by growth.</li>
+        <li style="margin-top:4px"><b>Four ranked calls to action.</b> Each one is a concrete ask: triggers, data, allocation, funnel fields.</li>
+        <li style="margin-top:4px"><b>Spend decisions.</b> A payback bar, tranches, and a small ring-fenced bet outside the bar.</li>
+        <li style="margin-top:4px"><b>Evidence last.</b> Every chart has a table view, secondary views such as ramp sit at the end, and the explorer lets the board test the assumptions.</li>
+      </ol></div>
+    <div class="card rec"><span class="tagrec">What I would need from a real company</span>
+      <ul>
+        <li>Monthly ARR by customer, with product, start date and expansion, contraction and churn tagged, so NRR and GRR can be cut by cohort age and product.</li>
+        <li>S&amp;M, COGS and revenue by quarter, ideally split by revenue type.</li>
+        <li>Opportunity data with stage dates, size, owner and lead source.</li>
+        <li>A set of trigger thresholds the exec team agrees in advance.</li>
+      </ul>
+      <p><span class="tagrec">Process</span></p>
+      <p>I used an AI assistant to build the page and the sample data. The layout, the ranking of calls to action, the triggers and the recommendations are my own judgment, and every number here is made up to show the format. The quarterly GRR series and the earlier quarters of the NRR series are synthetic, built to tie to the Jun-26 ARR bridge.</p></div>
+  </div></section>
+<footer>Brightwater Cloud is fictional and every number on this page is illustrative sample data, made up to demonstrate the layout: headline number, good/bad insights, ranked calls to action, then the supporting evidence.</footer>
+</div>
+<div class="tt" id="tt" hidden></div>
+<script>
+/* Illustrative data for a fictional company. Not derived from any real company. */
+const NS='http://www.w3.org/2000/svg';
+const f1=v=>v==null?'–':(+v).toFixed(1),f2=v=>v==null?'–':(+v).toFixed(2);
+const $m=v=>v==null?'–':'$'+(+v).toFixed(1)+'M';
+const pct=(v,d=0)=>v==null?'–':(v*100).toFixed(d)+'%';
+const g=id=>document.getElementById(id);
+const redraws=[];
+function S(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs){if(k==='text')e.textContent=attrs[k];else e.setAttribute(k,attrs[k]);}if(parent)parent.appendChild(e);return e;}
+function H(tag,attrs,kids){const e=document.createElement(tag);for(const k in (attrs||{})){if(k==='text')e.textContent=attrs[k];else if(k==='cls')e.className=attrs[k];else e.setAttribute(k,attrs[k]);}(kids||[]).forEach(c=>e.appendChild(typeof c==='string'?document.createTextNode(c):c));return e;}
+function nice(min,max,n){n=n||5;if(max===min)max=min+1;const span=max-min,s0=span/n,mag=Math.pow(10,Math.floor(Math.log10(s0))),nm=s0/mag;
+  const step=(nm<=1?1:nm<=2?2:nm<=2.5?2.5:nm<=5?5:10)*mag,lo=Math.floor(min/step+1e-9)*step,hi=Math.ceil(max/step-1e-9)*step,t=[];
+  for(let v=lo;v<=hi+step/2;v+=step)t.push(+v.toFixed(10));return{lo,hi,t};}
+const isDark=()=>{const t=document.documentElement.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches;};
+const tt=g('tt');
+function showTip(ev,title,rows){tt.textContent='';tt.appendChild(H('div',{cls:'t',text:title}));
+  rows.forEach(r=>{const d=H('div',{cls:'r'});if(r.color){const i=H('i');i.style.borderTopColor=r.color;d.appendChild(i);}d.appendChild(H('span',{text:r.name}));d.appendChild(H('b',{text:r.val}));tt.appendChild(d);});
+  tt.hidden=false;const w=tt.offsetWidth,h=tt.offsetHeight;let x=ev.clientX+14,y=ev.clientY+14;
+  if(x+w>innerWidth-8)x=ev.clientX-w-14;if(y+h>innerHeight-8)y=innerHeight-h-8;tt.style.left=Math.max(8,x)+'px';tt.style.top=Math.max(8,y)+'px';}
+const hideTip=()=>{tt.hidden=true;};
+function tableEl(head,rows){const t=H('table'),th=H('thead'),tr=H('tr');head.forEach((h,i)=>tr.appendChild(H('th',{text:h,cls:i?'num':''})));th.appendChild(tr);t.appendChild(th);
+  const tb=H('tbody');rows.forEach(r=>{const tr=H('tr');r.forEach((c,i)=>tr.appendChild(H('td',{text:c,cls:i?'num':''})));tb.appendChild(tr);});t.appendChild(tb);const w=H('div',{cls:'tw'});w.appendChild(t);return w;}
+/* card: title, sub, draw(host), table()->{head,rows}, legend [{name,color,kind}], note */
+function card(id,o){const root=g(id);let showT=false;
+  const render=()=>{root.textContent='';
+    const hd=H('div',{cls:'hd'});const tl=H('div');tl.appendChild(H('h3',{text:typeof o.title==='function'?o.title():o.title}));if(o.sub)tl.appendChild(H('div',{cls:'s',text:typeof o.sub==='function'?o.sub():o.sub}));hd.appendChild(tl);
+    if(o.table){const b=H('button',{cls:'btn',type:'button','aria-pressed':showT?'true':'false',text:showT?'Chart view':'Table view'});b.onclick=()=>{showT=!showT;render();};hd.appendChild(b);}
+    root.appendChild(hd);
+    if(showT){const t=o.table();root.appendChild(tableEl(t.head,t.rows));}
+    else{const host=H('div',{cls:'plot'});root.appendChild(host);
+      if(o.legend){const lg=H('div',{cls:'legend'});o.legend().forEach(l=>{const i=H('i',{cls:l.kind==='box'?'b':''});if(l.kind==='box')i.style.background=l.color;else i.style.borderTopColor=l.color;lg.appendChild(i.cloneNode()&&i);lg.lastChild.after?0:0;const s=H('span');s.appendChild(i);s.appendChild(document.createTextNode(l.name));lg.appendChild(s);});root.appendChild(lg);}
+      o.draw(host);host._draw=()=>{host.textContent='';o.draw(host);};}
+    if(o.note)root.appendChild(H('div',{cls:'note',text:o.note}));};
+  render();redraws.push({root,render,draw:()=>{const h=root.querySelector('.plot');if(h&&h.clientWidth)h._draw&&h._draw();}});return{render};}
+/* ---------- charts ---------- */
+function lineChart(host,o){
+  const W=Math.max(host.clientWidth,260),Hh=o.h||250,pl=40,pr=o.end?104:14,pt=10,pb=26;
+  const svg=S('svg',{viewBox:`0 0 ${W} ${Hh}`,role:'img','aria-label':o.aria||'chart'},host);
+  const n=o.labels.length;let mx=-Infinity,mn=Infinity;
+  o.series.forEach(s=>s.vals.forEach(v=>{if(v!=null){mx=Math.max(mx,v);mn=Math.min(mn,v);}}));
+  const lo=o.ymin!=null?o.ymin:Math.min(0,mn),hi=o.ymax!=null?o.ymax:mx;const sc=nice(lo,hi,4);
+  const X=i=>n===1?pl:pl+i*(W-pl-pr)/(n-1),Y=v=>pt+(sc.hi-v)/(sc.hi-sc.lo)*(Hh-pt-pb);
+  sc.t.forEach(t=>{S('line',{x1:pl,x2:W-pr,y1:Y(t),y2:Y(t),style:'stroke:var(--grid)','stroke-width':1},svg);S('text',{x:pl-6,y:Y(t)+4,'text-anchor':'end','font-size':11,style:'fill:var(--muted)',text:o.yfmt?o.yfmt(t):t},svg);});
+  if(o.ref!=null)S('line',{x1:pl,x2:W-pr,y1:Y(o.ref),y2:Y(o.ref),style:'stroke:var(--axis)','stroke-width':1.5},svg);
+  const step=Math.max(1,Math.ceil(58/((W-pl-pr)/Math.max(1,n-1))));
+  o.labels.forEach((l,i)=>{if(i%step===0||i===n-1&&n-1-(Math.floor((n-1)/step)*step)>=step*0.8)S('text',{x:X(i),y:Hh-8,'text-anchor':'middle','font-size':11,style:'fill:var(--muted)',text:l},svg);});
+  o.series.forEach(s=>{let d='',last=-1;s.vals.forEach((v,i)=>{if(v==null)return;d+=(d?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1);last=i;});
+    if(o.area&&s.area){const a=d+`L${X(last)} ${Y(sc.lo)}L${X(s.vals.findIndex(v=>v!=null))} ${Y(sc.lo)}Z`;S('path',{d:a,style:`fill:${s.color};opacity:.10`,stroke:'none'},svg);}
+    S('path',{d,fill:'none',style:`stroke:${s.color}`,'stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'},svg);
+    if(last>=0){S('circle',{cx:X(last),cy:Y(s.vals[last]),r:4,style:`fill:${s.color};stroke:var(--surface)`,'stroke-width':2},svg);
+      if(o.end)S('text',{x:X(last)+9,y:Y(s.vals[last])+4,'font-size':11.5,style:'fill:var(--ink2);font-weight:600',text:(s.short||s.name)+' '+(o.efmt||o.yfmt||(v=>v))(s.vals[last])},svg);}});
+  const cross=S('line',{y1:pt,y2:Hh-pb,style:'stroke:var(--axis)','stroke-width':1,visibility:'hidden'},svg);
+  const dots=o.series.map(s=>S('circle',{r:4,style:`fill:${s.color};stroke:var(--surface)`,'stroke-width':2,visibility:'hidden'},svg));
+  const cap=S('rect',{x:pl,y:0,width:W-pl-pr,height:Hh-pb,fill:'transparent'},svg);
+  const mv=ev=>{const r=svg.getBoundingClientRect(),px=(ev.clientX-r.left)*(W/r.width);let i=Math.round((px-pl)/((W-pl-pr)/Math.max(1,n-1)));i=Math.max(0,Math.min(n-1,i));
+    cross.setAttribute('x1',X(i));cross.setAttribute('x2',X(i));cross.setAttribute('visibility','visible');
+    const rows=[];o.series.forEach((s,k)=>{const v=s.vals[i];if(v==null){dots[k].setAttribute('visibility','hidden');return;}dots[k].setAttribute('cx',X(i));dots[k].setAttribute('cy',Y(v));dots[k].setAttribute('visibility','visible');rows.push({name:s.name,color:s.color,val:(o.tfmt||o.yfmt||(v=>v))(v)});});
+    showTip(ev,o.labels[i],rows);};
+  cap.addEventListener('pointermove',mv);cap.addEventListener('pointerleave',()=>{cross.setAttribute('visibility','hidden');dots.forEach(d=>d.setAttribute('visibility','hidden'));hideTip();});
+}
+function rbar(x,y,w,h,rt,rb){ // rect with optional rounded top/bottom data-ends
+  const r=Math.min(3,w/2,h/2);const a=rt?r:0,b=rb?r:0;
+  return `M${x} ${y+a}${a?`Q${x} ${y} ${x+a} ${y}`:''}H${x+w-a}${a?`Q${x+w} ${y} ${x+w} ${y+a}`:''}V${y+h-b}${b?`Q${x+w} ${y+h} ${x+w-b} ${y+h}`:''}H${x+b}${b?`Q${x} ${y+h} ${x} ${y+h-b}`:''}Z`;}
+function stackChart(host,o){
+  const W=Math.max(host.clientWidth,260),Hh=o.h||260,pl=40,pr=12,pt=10,pb=26,n=o.labels.length;
+  const svg=S('svg',{viewBox:`0 0 ${W} ${Hh}`,role:'img','aria-label':o.aria||'chart'},host);
+  let mx=0,mn=0;for(let i=0;i<n;i++){mx=Math.max(mx,o.pos.reduce((a,s)=>a+(s.vals[i]||0),0));mn=Math.min(mn,-o.neg.reduce((a,s)=>a+(s.vals[i]||0),0));}
+  const sc=nice(mn,mx,4),Y=v=>pt+(sc.hi-v)/(sc.hi-sc.lo)*(Hh-pt-pb),band=(W-pl-pr)/n,bw=Math.min(24,band*.7);
+  sc.t.forEach(t=>{S('line',{x1:pl,x2:W-pr,y1:Y(t),y2:Y(t),style:'stroke:var(--grid)','stroke-width':1},svg);S('text',{x:pl-6,y:Y(t)+4,'text-anchor':'end','font-size':11,style:'fill:var(--muted)',text:t},svg);});
+  S('line',{x1:pl,x2:W-pr,y1:Y(0),y2:Y(0),style:'stroke:var(--axis)','stroke-width':1.5},svg);
+  const step=Math.max(1,Math.ceil(46/band));
+  for(let i=0;i<n;i++){const cx=pl+band*i+band/2,x=cx-bw/2;
+    if(i%step===0)S('text',{x:cx,y:Hh-8,'text-anchor':'middle','font-size':11,style:'fill:var(--muted)',text:o.labels[i]},svg);
+    let up=0;o.pos.forEach((s,k)=>{const v=s.vals[i]||0;if(v<=0)return;const y1=Y(up+v),y0=Y(up);up+=v;const last=k===o.pos.length-1||o.pos.slice(k+1).every(q=>!(q.vals[i]>0));
+      S('path',{d:rbar(x,y1,bw,Math.max(1,y0-y1),last,false),style:`fill:${s.color};stroke:var(--surface)`,'stroke-width':1},svg);});
+    let dn=0;o.neg.forEach((s,k)=>{const v=s.vals[i]||0;if(v<=0)return;const y0=Y(-dn),y1=Y(-(dn+v));dn+=v;const last=k===o.neg.length-1||o.neg.slice(k+1).every(q=>!(q.vals[i]>0));
+      S('path',{d:rbar(x,y0,bw,Math.max(1,y1-y0),false,last),style:`fill:${s.color};stroke:var(--surface)`,'stroke-width':1},svg);});
+    const hit=S('rect',{x:pl+band*i,y:pt,width:band,height:Hh-pt-pb,fill:'transparent',tabindex:0},svg);
+    const rows=()=>o.pos.concat(o.neg).map(s=>({name:s.name,color:s.color,val:(o.neg.includes(s)?'-':'+')+f2(s.vals[i])}));
+    hit.addEventListener('pointermove',ev=>showTip(ev,o.labels[i],rows()));hit.addEventListener('pointerleave',hideTip);
+    hit.addEventListener('focus',()=>{const r=hit.getBoundingClientRect();showTip({clientX:r.left,clientY:r.top},o.labels[i],rows());});hit.addEventListener('blur',hideTip);}
+}
+function colChart(host,o){
+  const W=Math.max(host.clientWidth,200),Hh=o.h||200,pl=34,pr=8,pt=18,pb=26,n=o.labels.length;
+  const svg=S('svg',{viewBox:`0 0 ${W} ${Hh}`,role:'img','aria-label':o.aria||'chart'},host);
+  const sc=nice(0,Math.max(...o.vals,o.ymax||0),3),Y=v=>pt+(sc.hi-v)/(sc.hi-sc.lo)*(Hh-pt-pb),band=(W-pl-pr)/n,bw=Math.min(24,band*.6);
+  sc.t.forEach(t=>{S('line',{x1:pl,x2:W-pr,y1:Y(t),y2:Y(t),style:'stroke:var(--grid)','stroke-width':1},svg);S('text',{x:pl-6,y:Y(t)+4,'text-anchor':'end','font-size':11,style:'fill:var(--muted)',text:o.yfmt?o.yfmt(t):t},svg);});
+  o.vals.forEach((v,i)=>{const cx=pl+band*i+band/2,x=cx-bw/2,y=Y(v);
+    const hi=o.hi&&o.hi.includes(i);
+    const p=S('path',{d:rbar(x,y,bw,Math.max(1,Y(0)-y),true,false),style:`fill:${hi===false?'var(--muted)':o.color}`,tabindex:0},svg);
+    S('text',{x:cx,y:y-5,'text-anchor':'middle','font-size':11,style:'fill:var(--ink2);font-weight:600',text:o.vfmt(v)},svg);
+    S('text',{x:cx,y:Hh-8,'text-anchor':'middle','font-size':11,style:'fill:var(--muted)',text:o.labels[i]},svg);
+    const hit=S('rect',{x:pl+band*i,y:pt,width:band,height:Hh-pt-pb,fill:'transparent'},svg);
+    const tip=ev=>showTip(ev,o.labels[i],[{name:o.name,color:o.color,val:o.vfmt(v)}]);hit.addEventListener('pointermove',tip);hit.addEventListener('pointerleave',hideTip);p.addEventListener('focus',()=>{const r=p.getBoundingClientRect();tip({clientX:r.left,clientY:r.top});});p.addEventListener('blur',hideTip);});
+  S('line',{x1:pl,x2:W-pr,y1:Y(0),y2:Y(0),style:'stroke:var(--axis)','stroke-width':1.5},svg);
+}
+/* ---------- range-aware slice ---------- */
+
+
+/* ---------- data ---------- */
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const months=[];for(let i=0;i<24;i++){const m=(6+i)%12,y=24+Math.floor((6+i)/12);months.push(MN[m]+'-'+y);}
+const L=[],R=[],Cn=[],Us=[];
+for(let t=0;t<24;t++){let base=t<=11?12.5*Math.pow(28.2/12.5,t/11):28.2*Math.pow(48.2/28.2,(t-11)/12);
+  const noise=(t===11||t===23)?0:0.006*Math.sin(t*1.7);L.push(base*(1+noise));
+  const r=t<=11?0.935-0.005*t/11:0.93-0.02*(t-11)/12;R.push(r+((t===11||t===23)?0:0.004*Math.sin(t*2.3)));
+  Cn.push(L[t]/R[t]);Us.push(0.36+0.08*t/23);}
+R[23]=0.91;Cn[23]=L[23]/R[23];R[11]=0.93;Cn[11]=L[11]/R[11];
+const Q=['Q3-24','Q4-24','Q1-25','Q2-25','Q3-25','Q4-25','Q1-26','Q2-26'];
+const perD=[.58,.60,.63,.66,.70,.74,.77,.80],newC=[3.6,3.9,4.3,4.9,5.3,5.6,6.2,6.9];
+const sm=perD.map((p,i)=>p*newC[i]),GM=[.78,.77,.76,.76,.75,.75,.74,.73];
+const pb=perD.map((p,i)=>p/GM[i]*12);
+const paid=[.20,.21,.23,.25,.28,.33,.38,.47];
+const win=[.41,.40,.41,.42,.40,.38,.37,.36],decided=[310,340,360,390,420,450,490,520];
+const poc=[.64,.63,.62,.60,.57,.55,.52,.49],demo=[.78,.77,.75,.73,.70,.67,.64,.61];
+const bSMB=[.48,.47,.46,.44,.42,.38,.35,.33],bMM=[.38,.39,.38,.40,.38,.37,.36,.36],bEnt=[.27,.26,.28,.27,.28,.28,.29,.29];
+const days=[48,47,50,52,55,58,61,66];
+const avgACV=[9.4,9.9,10.5,11.2,12.0,12.9,13.6,14.2],medACV=[7.0,7.0,6.9,6.8,6.6,6.4,6.2,6.1];
+const logos=newC.map((n,i)=>Math.round(n*1000/avgACV[i]));
+const fv3=[.82,.83,.81,.84,.80,.79,.71,null],rt3=[.86,.87,.85,.88,.84,.82,.70,null],rt6=[.97,.99,.98,1.0,.98,.99,null,null];
+const age=[['0 to 2 months',5.6,2.0],['3 to 5 months',7.8,5.4],['6 to 11 months',14.4,15.1],['12+ months',25.2,25.7]];
+const bridge={start:28.2,newl:12.3,exp:10.9,con:-1.2,churn:-2.0,end:48.2};
+const streams={rev:[6.4,4.6,0.9],cogs:[1.10,1.45,0.66],sm:[2.75,2.77],newA:[3.6,3.3],grr:[.91,.85]};
+const J=23,Y=11;
+const arrJ=L[J],arrY=L[Y],yoy=arrJ/arrY-1,gapJ=Cn[J]-L[J]; /* ARR is the running series L; the signed-scope series Cn appears only in the ramp panel */
+/* retention: Jun-26 values come from the ARR bridge; earlier quarters are a small synthetic series built to tie to it */
+const nrrAgg=1+(bridge.exp+bridge.con+bridge.churn)/bridge.start,grrAgg=1+(bridge.con+bridge.churn)/bridge.start;
+const nrrQ=[1.180,1.190,1.205,1.220,1.240,1.250,1.262,nrrAgg];   /* trailing 12 months, all customers (synthetic history) */
+const nrrMat=[1.110,1.115,1.120,1.125,1.125,1.120,1.120,1.120];  /* trailing 12 months, customers older than 12 months (synthetic) */
+const grrQ=[.915,.911,.907,.903,.899,.895,.891,grrAgg];          /* trailing 12 months (synthetic history) */
+/* quarter-end ARR, net new ARR and magic number (net new ARR ÷ prior-quarter S&M) */
+const qEnd=[2,5,8,11,14,17,20,23],arrQ=qEnd.map(i=>L[i]);
+const netNew=arrQ.map((a,k)=>k?a-arrQ[k-1]:null);
+const magic=netNew.map((n,k)=>k?n/sm[k-1]:null);
+const nnTTM=arrJ-arrY,nnPrior=arrY-L[0];
+/* ---------- header ---------- */
+g('heroNum').textContent=$m(arrJ);
+const hy=g('heroYoy');hy.textContent=`(▲ +${(yoy*100).toFixed(1)}% YoY)`;hy.className='yoy up';
+g('heroNrr').textContent=pct(nrrAgg,0);g('heroGrr').textContent=pct(grrAgg,1);
+g('heroFn').textContent=`Trailing 12 months, Jun-26. NRR is about ${pct(nrrMat[7],0)} for customers older than 12 months. GRR history is synthetic.`;
+/* ---------- insights ---------- */
+const costUp=perD[7]/perD[0]-1;
+const F=[
+ ['good',`ARR is ${$m(arrJ)}, up ${(yoy*100).toFixed(0)}% in a year`,`Net new ARR was ${$m(nnTTM)} over the last 12 months, up ${pct(nnTTM/nnPrior-1)} on the prior 12 months (${$m(nnPrior)}).`],
+ ['good',`NRR is ${pct(nrrAgg)} and expansion is the biggest source of growth`,`Expansion added ${$m(bridge.exp)} against ${$m(bridge.newl)} from new logos. Customers older than 12 months run at about ${pct(nrrMat[7])}, the steadier read, because the aggregate is lifted by recent customers still ramping.`],
+ ['good',`Time to first value is steady at 2 months`,`The median is 2 months in every signing cohort, and about 78% reach first value within 3 months. Customers 6+ months old are at 102% to 105% of their starting scope.`],
+ ['bad',`GRR is ${pct(grrAgg,1)} and has slipped ${((grrQ[0]-grrAgg)*100).toFixed(1)} points since Q3-24`,`Churn and contraction cost ${$m(-(bridge.con+bridge.churn))} of the ${$m(bridge.start)} starting ARR. Usage customers retain at ${pct(streams.grr[1])} against ${pct(streams.grr[0])} for subscription.`],
+ ['bad',`Cost of new ARR is up ~${Math.round(costUp*100)}%, and payback has stretched from ${f1(pb[0])} to ${f1(pb[7])} months`,`S&M per $1 of new ARR rose from $${f2(perD[0])} to $${f2(perD[7])} and the magic number fell from ${f1(magic[3])} in Q2-25 to ${f1(magic[7])}. Blended payback is inside the 18-month bar, but the marginal dollar costs more: the aggressive spend plan misses it.`],
+ ['bad',`Mix is shifting: the average deal is up, the median is down, and small deals win less`,`Average new-logo ACV rose from $${f1(avgACV[0])}K to $${f1(avgACV[7])}K while the median fell to $${f1(medACV[7])}K. Win rate on deals under $10K slipped from ${pct(bSMB[0])} to ${pct(bSMB[7])}; deals over $40K held at about ${pct(bEnt[7])}.`]];
+g('findings').replaceChildren(...F.map(f=>H('div',{cls:'f '+f[0]},[H('b',{},[H('i',{cls:'ic',text:f[0]==='good'?'✓':'✗'}),document.createTextNode(f[1])]),H('span',{text:f[2]})])));
+/* headline lists */
+const li=t=>H('li',{text:t});
+[`Deal mix is shifting: average new-logo ACV went from $${f1(avgACV[0])}K to $${f1(avgACV[7])}K while the median moved from $${f1(medACV[0])}K to $${f1(medACV[7])}K, and usage grew from ${pct(Us[0])} to ${pct(Us[J])} of ARR. A few larger deals lift the average and cost more to sell.`,
+ `Aggregate NRR of ${pct(nrrAgg)} is lifted by recent customers still ramping, which counts as expansion. The cohort view for customers older than 12 months is about ${pct(nrrMat[7])}, and the aggregate should converge toward it as growth normalizes.`,
+ `Time to first value has not lengthened: the median is 2 months in every cohort.`].forEach(t=>g('recNat').appendChild(li(t)));
+[`Paid media per $1 of new ARR rose from $${f2(paid[0])} to $${f2(paid[7])}, which a move upmarket does not explain.`,
+ `The share of opportunities that complete a proof of concept fell from ${pct(poc[0])} to ${pct(poc[7])}, and that stage is the strongest predictor of winning (71% win with one, 14% without). That points to lower-intent leads. It is important to check whether those leads came from paid media and whether that investment is paying off. The data has no lead source yet (Call to action 4).`,
+ `GRR has slipped ${((grrQ[0]-grrAgg)*100).toFixed(1)} points since Q3-24, which growth does not explain. About $1.2M of ARR across 62 customers signed 6 or more months ago has still not reached first value, and some started and stopped. That needs triage, not timing, and is the first place to look.`].forEach(t=>g('recUnx').appendChild(li(t)));
+g('recPlat').textContent=`Usage is ${pct(Us[J])} of ARR and takes longer to pay back than subscription (see unit economics). Services revenue earns a 27% margin.`;
+/* ---------- triggers ---------- */
+function stp(st){return H('span',{cls:'stp '+st,text:st==='green'?'Inside':st==='amber'?'Amber':'Red'});}
+const lv=(v,a,r,hi)=>hi?(v>r?'red':v>a?'amber':'green'):(v<r?'red':v<a?'amber':'green');
+const trail=(perD[3]+perD[4]+perD[5]+perD[6])/4;
+const trig=[
+ ['CAC payback, average of last two quarters',f1((pb[6]+pb[7])/2)+' mo','Amber above 14 months, red above 18',lv((pb[6]+pb[7])/2,14,18,true),'Hold the next tranche of spend'],
+ ['S&M per $1 of new ARR','$'+f2(perD[7]),'Amber 10% above the trailing four-quarter average, red 20% above',lv(perD[7]/trail-1,.10,.20,true),'Cap paid media'],
+ ['Magic number (net new ARR ÷ prior-quarter S&M)',f2(magic[7]),'Amber below 1.0, red below 0.75',lv(magic[7],1.0,.75,false),'Review spend allocation and sales capacity'],
+ ['Gross revenue retention, trailing 12 months',pct(grrAgg,1),'Amber below 90%, red below 85%',lv(grrAgg,.90,.85,false),'Review churn and contraction by cohort and product'],
+ ['Gross margin',pct(GM[7],1),'Amber below 72%, red below 68%',lv(GM[7],.72,.68,false),'Review hosting and delivery cost'],
+ ['ARR not at first value after 6+ months','$1.2M ('+pct(1.2/arrJ,1)+' of ARR)','Amber above 3%, red above 5%',lv(1.2/arrJ,.03,.05,true),'Named owner and weekly burn-down'],
+ ['Share of a signing cohort at first value within 3 months (latest full cohort)',pct(fv3[6]),'Amber below 75%, red below 70%',lv(fv3[6],.75,.70,false),'Check onboarding capacity'],
+ ['Opportunities completing a proof of concept',pct(poc[7]),'Amber below 55%, red below 50%',lv(poc[7],.55,.50,false),'Review lead quality and qualification'],
+ ['Paid media per $1 of new ARR, quarter on quarter','+'+Math.round((paid[7]/paid[6]-1)*100)+'%','Amber above +20%, red above +40%',lv(paid[7]/paid[6]-1,.20,.40,true),'Review channel mix and spend']];
+(function(){const t=H('table',{cls:'dec'}),th=H('thead'),tr=H('tr');['View','Now','Proposed trigger','Status today','If tripped'].forEach((h,i)=>tr.appendChild(H('th',{text:h,cls:i===1?'num':''})));th.appendChild(tr);t.appendChild(th);
+ const tb=H('tbody');trig.forEach(r=>{const tr=H('tr');[r[0],r[1],r[2]].forEach((c,i)=>tr.appendChild(H('td',{text:c,cls:i===1?'num':''})));const td=H('td');td.appendChild(stp(r[3]));tr.appendChild(td);tr.appendChild(H('td',{text:r[4]}));tb.appendChild(tr);});t.appendChild(tb);
+ const w=H('div',{cls:'tw'});w.style.maxHeight='none';w.appendChild(t);g('trigTbl').appendChild(w);})();
+/* ---------- tiles ---------- */
+const chip=(st,txt)=>H('div',{cls:'chip '+st,role:'status',text:txt});
+const tiles=[
+ ['Net new ARR, trailing 12 months',$m(nnTTM),`New logos ${$m(bridge.newl)} + expansion ${$m(bridge.exp)} − churn and contraction ${$m(-(bridge.con+bridge.churn))}`,[chip('green',`Up ${pct(nnTTM/nnPrior-1)} on the prior 12 months`)]],
+ ['Gross revenue retention',pct(grrAgg,1),'Trailing 12 months; subscription 91%, usage 85%',[chip('amber',`Down ${((grrQ[0]-grrAgg)*100).toFixed(1)} points since Q3-24`)]],
+ ['Magic number, Q2-26',f2(magic[7]),'Net new ARR ÷ prior-quarter S&M',[chip('amber',`Down from ${f1(magic[3])} in Q2-25, still above 1.0`)]],
+ ['New-business win rate, Q2-26',pct(win[7]),`${decided[7]} decided opportunities`,[chip('red',`Down from ${pct(win[0])} two years ago`)]],
+ ['CAC payback, Q2-26',f1(pb[7])+' mo',`S&M ${$m(sm[7])}`,[chip('amber',`Inside the 18-month bar, up from ${f1(pb[6])} mo`)]],
+ ['Recognized revenue, Q2-26',$m(streams.rev.reduce((a,b)=>a+b,0)),'Subscription, usage and services',[chip('green','Usage is the faster-growing stream')]]];
+g('tiles').replaceChildren(...tiles.map(t=>H('div',{cls:'tile'},[H('div',{cls:'l',text:t[0]}),H('div',{cls:'v',text:t[1]}),H('div',{cls:'d',text:t[2]}),...t[3]])));
+/* ---------- charts ---------- */
+const C1='var(--s1)',C2='var(--s2)',C3='var(--s3)';
+card('c-arr',{title:'ARR, $M',sub:'Month-end ARR, Jul-24 to Jun-26.',
+ draw:h=>lineChart(h,{labels:months,h:250,end:true,ymin:0,yfmt:v=>v,tfmt:v=>'$'+f1(v)+'M',efmt:v=>f1(v),aria:'ARR by month',series:[{name:'ARR',short:'ARR',color:C1,vals:L}]}),
+ table:()=>({head:['Month','ARR $M','Net new in month $M','YoY growth'],rows:months.map((m,i)=>[m,f1(L[i]),i?f1(L[i]-L[i-1]):'–',i>=12?pct(L[i]/L[i-12]-1,0):'–'])})});
+card('c-ret',{title:'Net and gross revenue retention, trailing 12 months',sub:'NRR for all customers and for customers older than 12 months, and GRR.',
+ legend:()=>[{name:'NRR, all customers',color:C1},{name:'NRR, customers 12+ months old',color:C3},{name:'GRR',color:C2}],
+ draw:h=>lineChart(h,{labels:Q,h:230,end:false,ymin:.8,ymax:1.3,yfmt:v=>Math.round(v*100)+'%',tfmt:v=>pct(v,1),aria:'Net and gross revenue retention by quarter',series:[{name:'NRR, all customers',color:C1,vals:nrrQ},{name:'NRR, customers 12+ months old',color:C3,vals:nrrMat},{name:'GRR',color:C2,vals:grrQ}]}),
+ table:()=>({head:['Quarter','NRR, all','NRR, 12+ months','GRR'],rows:Q.map((q,i)=>[q,pct(nrrQ[i],1),pct(nrrMat[i],1),pct(grrQ[i],1)])}),
+ note:'The Jun-26 values for NRR (all customers) and GRR come from the ARR bridge below. The earlier quarters and the 12+ month series are synthetic, built to be consistent with the 115% NRR assumption in the explorer and a GRR in the high 80s.'});
+/* bridge */
+(function(){const steps=[['Start Jun-25',bridge.start,'t'],['New logos',bridge.newl,'p'],['Expansion',bridge.exp,'p'],['Contraction',bridge.con,'n'],['Churn',bridge.churn,'n'],['End Jun-26',bridge.end,'t']];
+ card('c-bridge',{title:'ARR bridge, Jun-25 to Jun-26, $M',sub:'Expansion is the biggest source of growth. Net new ARR is the end less the start.',
+  draw:h=>{const W=Math.max(h.clientWidth,260),Hh=250,pl=36,pr=8,pt=18,pb=34,n=steps.length;const svg=S('svg',{viewBox:`0 0 ${W} ${Hh}`,role:'img','aria-label':'ARR bridge'},h);
+   const sc=nice(0,52,4),Yv=v=>pt+(sc.hi-v)/(sc.hi-sc.lo)*(Hh-pt-pb),band=(W-pl-pr)/n,bw=Math.min(46,band*.62);
+   sc.t.forEach(t=>{S('line',{x1:pl,x2:W-pr,y1:Yv(t),y2:Yv(t),style:'stroke:var(--grid)','stroke-width':1},svg);S('text',{x:pl-6,y:Yv(t)+4,'text-anchor':'end','font-size':11,style:'fill:var(--muted)',text:t},svg);});
+   let run=0;steps.forEach((s,i)=>{const cx=pl+band*i+band/2,x=cx-bw/2;let a,b;if(s[2]==='t'){a=0;b=s[1];run=s[1];}else{a=run;b=run+s[1];run=b;}
+    const top=Math.max(a,b),bot=Math.min(a,b),col=s[2]==='t'?C1:(s[1]>=0?C3:C2);
+    const p=S('path',{d:rbar(x,Yv(top),bw,Math.max(1,Yv(bot)-Yv(top)),true,false),style:`fill:${col}`},svg);
+    S('text',{x:cx,y:Yv(top)-5,'text-anchor':'middle','font-size':11,style:'fill:var(--ink2);font-weight:600',text:(s[2]==='n'?'−':s[2]==='p'?'+':'')+f1(Math.abs(s[1]))},svg);
+    S('text',{x:cx,y:Hh-14,'text-anchor':'middle','font-size':11,style:'fill:var(--muted)',text:W<480?['Start','New','Expand','Contract','Churn','End'][i]:s[0]},svg);
+    const hit=S('rect',{x:pl+band*i,y:pt,width:band,height:Hh-pt-pb,fill:'transparent'},svg);hit.addEventListener('pointermove',ev=>showTip(ev,s[0],[{name:'$M',color:col,val:f1(s[1])}]));hit.addEventListener('pointerleave',hideTip);});},
+  table:()=>({head:['Step','$M'],rows:steps.map(s=>[s[0],f1(s[1])]).concat([['Gross revenue retention',pct(1+(bridge.con+bridge.churn)/bridge.start,1)],['Net revenue retention (aggregate)',pct(1+(bridge.exp+bridge.con+bridge.churn)/bridge.start,0)]])})});})();
+card('c-eff1',{title:'S&M per $1 of new ARR',sub:'Cost to buy a dollar of new ARR booked.',
+ draw:h=>lineChart(h,{labels:Q,h:230,end:true,ymin:0,yfmt:v=>'$'+v.toFixed(2),tfmt:v=>'$'+f2(v),aria:'S&M per dollar of new ARR',series:[{name:'S&M per $1',short:'',color:C2,vals:perD}]}),
+ table:()=>({head:['Quarter','S&M $M','New ARR booked $M','S&M per $1','Paid media per $1'],rows:Q.map((q,i)=>[q,f2(sm[i]),f1(newC[i]),f2(perD[i]),f2(paid[i])])}),
+ note:'New ARR booked is gross new logo and expansion bookings in the quarter. The ARR bridge counts the same flows once they are running, so the two differ slightly (see the ramp panel).'});
+card('c-eff2',{title:'CAC payback, months',sub:'S&M per $1 ÷ gross margin × 12. Line at the 18-month bar. Blended; marginal payback is in the explorer.',
+ draw:h=>lineChart(h,{labels:Q,h:230,end:true,ymin:0,ymax:20,ref:18,yfmt:v=>v,tfmt:v=>f1(v)+' mo',efmt:v=>f1(v),aria:'CAC payback',series:[{name:'Payback',short:'',color:C1,vals:pb}]}),
+ table:()=>({head:['Quarter','Gross margin','Payback, months'],rows:Q.map((q,i)=>[q,pct(GM[i]),f1(pb[i])])})});
+card('c-nn',{title:'Net new ARR vs prior-quarter S&M, $M',sub:'ARR added in the quarter, against what was spent in the quarter before.',
+ legend:()=>[{name:'Net new ARR',color:C1},{name:'Prior-quarter S&M',color:C2}],
+ draw:h=>lineChart(h,{labels:Q,h:230,end:false,ymin:0,yfmt:v=>v,tfmt:v=>v==null?'n/a':'$'+f2(v)+'M',aria:'Net new ARR and prior-quarter S&M',series:[{name:'Net new ARR',color:C1,vals:netNew},{name:'Prior-quarter S&M',color:C2,vals:sm.map((s,k)=>k?sm[k-1]:null)}]}),
+ table:()=>({head:['Quarter','Quarter-end ARR $M','Net new ARR $M','Prior-quarter S&M $M','Magic number'],rows:Q.map((q,i)=>[q,f1(arrQ[i]),i?f2(netNew[i]):'n/a',i?f2(sm[i-1]):'n/a',i?f2(magic[i]):'n/a'])}),
+ note:'Net new ARR over the last four quarters sums to the same $20.0M as the ARR bridge. The first quarter has no prior-quarter figure in the data.'});
+card('c-magic',{title:'Magic number',sub:'Net new ARR ÷ prior-quarter S&M. Line at 1.0.',
+ draw:h=>lineChart(h,{labels:Q,h:230,end:true,ymin:0,ymax:2.5,ref:1,yfmt:v=>v.toFixed(1),tfmt:v=>v==null?'n/a':f2(v),efmt:v=>f2(v),aria:'Magic number by quarter',series:[{name:'Magic number',short:'Magic',color:C1,vals:magic}]}),
+ table:()=>({head:['Quarter','Net new ARR $M','Prior-quarter S&M $M','Magic number'],rows:Q.map((q,i)=>[q,i?f2(netNew[i]):'n/a',i?f2(sm[i-1]):'n/a',i?f2(magic[i]):'n/a'])})});
+card('c-fun1',{title:'Win rate and proof-of-concept completion',sub:'The proof of concept is the stage most linked to winning.',
+ legend:()=>[{name:'Win rate',color:C1},{name:'Completed proof of concept',color:C2},{name:'Reached demo',color:C3}],
+ draw:h=>lineChart(h,{labels:Q,h:240,end:false,ymin:0,ymax:1,yfmt:v=>Math.round(v*100)+'%',tfmt:v=>pct(v),aria:'Funnel stage conversion',series:[{name:'Win rate',color:C1,vals:win},{name:'Completed proof of concept',color:C2,vals:poc},{name:'Reached demo',color:C3,vals:demo}]}),
+ table:()=>({head:['Quarter','Decided opps','Reached demo','Completed POC','Win rate','Median days to close'],rows:Q.map((q,i)=>[q,decided[i],pct(demo[i]),pct(poc[i]),pct(win[i]),days[i]])})});
+card('c-fun2',{title:'Win rate by deal size, %',sub:'Small deals are winning less; large deals are steady.',
+ draw:h=>{const rows=[['Under $10K',bSMB],['$10K to $40K',bMM],['Over $40K',bEnt]];const t=H('table');const th=H('thead'),tr=H('tr');tr.appendChild(H('th',{text:'Size'}));Q.forEach(q=>tr.appendChild(H('th',{text:q,cls:'num'})));th.appendChild(tr);t.appendChild(th);
+  const tb=H('tbody');rows.forEach(r=>{const tr=H('tr');tr.appendChild(H('td',{text:r[0]}));r[1].forEach(v=>{const td=H('td',{text:pct(v),cls:'hm'});const a=Math.max(0,Math.min(1,(v-.25)/.25));td.style.background=`color-mix(in srgb,var(--s1) ${Math.round(8+a*42)}%,var(--surface))`;tr.appendChild(td);});tb.appendChild(tr);});t.appendChild(tb);const w=H('div',{cls:'tw'});w.appendChild(t);h.appendChild(w);}});
+card('c-str',{title:'Unit economics by revenue stream, Q2-26',sub:'Illustrative allocation of COGS and S&M, which the books would not split.',
+ draw:h=>{const rv=streams.rev,cg=streams.cogs,gmS=rv.map((r,i)=>(r-cg[i])/r),tot=rv.reduce((a,b)=>a+b,0),cgT=cg.reduce((a,b)=>a+b,0);
+  const cacS=[streams.sm[0]/streams.newA[0],streams.sm[1]/streams.newA[1]],cacB=perD[7],pbS=cacS.map((c,i)=>c/gmS[i]*12),pbB=cacB/GM[7]*12;
+  const ltv=gmS.slice(0,2).map((m,i)=>m*Math.min(1/(1-streams.grr[i]),5)),lc=ltv.map((l,i)=>l/cacS[i]),ltvB=GM[7]*5*0.5+0,lcB=null;
+  const rows=[['Revenue, $M',f2(rv[0]),f2(rv[1]),f2(rv[2]),f2(tot)],['COGS allocated, $M',f2(cg[0]),f2(cg[1]),f2(cg[2]),f2(cgT)],['Gross margin',pct(gmS[0]),pct(gmS[1]),pct(gmS[2]),pct((tot-cgT)/tot)],['S&M allocated, $M',f2(streams.sm[0]),f2(streams.sm[1]),'none',f2(sm[7])],['New ARR booked, $M',f2(streams.newA[0]),f2(streams.newA[1]),'not ARR',f2(newC[7])],['S&M per $1 of new ARR',f2(cacS[0]),f2(cacS[1]),'n/a',f2(cacB)],['CAC payback, months',f1(pbS[0]),f1(pbS[1]),'n/a',f1(pbB)],['LTV / CAC',f1(lc[0])+'x',f1(lc[1])+'x','n/a','–']];
+  h.appendChild(tableEl(['Q2-26','Subscription','Usage','Services','Blended'],rows));},
+ note:'LTV per $1 = gross margin × lifetime, where lifetime is 1 ÷ (1 − GRR) capped at 5 years. Services are one-time, so they have no CAC. Allocation weights are assumptions.'});
+card('c-acv',{title:'Average vs median new-logo ACV, $K',sub:'Average is rising while the typical deal is shrinking: a mix shift.',
+ legend:()=>[{name:'Average',color:C2},{name:'Median',color:C1}],
+ draw:h=>lineChart(h,{labels:Q,h:230,end:true,ymin:0,yfmt:v=>v,tfmt:v=>'$'+f1(v)+'K',efmt:v=>'$'+f1(v)+'K',aria:'Average and median ACV',series:[{name:'Average',short:'Avg',color:C2,vals:avgACV},{name:'Median',short:'Median',color:C1,vals:medACV}]}),
+ table:()=>({head:['Quarter','New logos','Average ACV $K','Median ACV $K'],rows:Q.map((q,i)=>[q,logos[i],f1(avgACV[i]),f1(medACV[i])])})});
+/* ---------- ramp: contracted vs live ARR (secondary panel; the only place these terms are used) ---------- */
+card('c-ramp',{title:'Contracted ARR vs live ARR, $M',sub:'Contracted is signed scope. Live is what customers are running after go-live; it is the ARR used everywhere else on this page.',
+ legend:()=>[{name:'Contracted',color:C2},{name:'Live (ARR)',color:C1}],
+ draw:h=>lineChart(h,{labels:months,h:250,end:true,ymin:0,yfmt:v=>v,tfmt:v=>f1(v),efmt:v=>f1(v),aria:'Contracted and live ARR by month',series:[{name:'Contracted',short:'Contracted',color:C2,vals:Cn},{name:'Live (ARR)',short:'Live',color:C1,vals:L}]}),
+ table:()=>({head:['Month','Contracted $M','Live $M','Live ÷ contracted'],rows:months.map((m,i)=>[m,f1(Cn[i]),f1(L[i]),pct(R[i],1)])}),
+ note:`Jun-26: contracted ${$m(Cn[J])} less live ${$m(arrJ)} leaves a gap of ${$m(gapJ)}. Of that, $4.1M is across 212 customers that are not yet live (about 71% inside a normal go-live window; $1.2M across 62 customers signed 6+ months ago is stuck), and ${$m(gapJ-4.1)} is live customers running below contract.`});
+card('c-age',{title:'Live ÷ contracted, by customer age',sub:'Young customers are still ramping; mature customers run above contract.',
+ draw:h=>colChart(h,{labels:age.map(a=>a[0].replace(' months','m')),vals:age.map(a=>a[2]/a[1]),color:C1,name:'Live ÷ contracted',h:230,ymax:1.1,yfmt:v=>Math.round(v*100)+'%',vfmt:v=>Math.round(v*100)+'%',aria:'Live over contracted by customer age'}),
+ table:()=>({head:['Customer age','Contracted $M','Live $M','Live ÷ contracted'],rows:age.map(a=>[a[0],f1(a[1]),f1(a[2]),pct(a[2]/a[1],0)])})});
+card('c-conv',{title:'CAC payback on customers that actually go live',sub:'Each signing quarter’s S&M against the ARR those customers were running 3 and 6 months after signing. Blank where there is not enough history. Line at the 18-month bar.',
+ legend:()=>[{name:'On contracted (as reported)',color:C3},{name:'On live at +3 months',color:C1},{name:'On live at +6 months',color:C2}],
+ draw:h=>lineChart(h,{labels:Q,h:230,end:false,ymin:0,ymax:24,ref:18,yfmt:v=>v,tfmt:v=>v==null?'n/a':f1(v)+' mo',aria:'Payback on contracted and live ARR',series:[{name:'On contracted (as reported)',color:C3,vals:pb},{name:'On live at +3 months',color:C1,vals:pb.map((p,i)=>rt3[i]?p/rt3[i]:null)},{name:'On live at +6 months',color:C2,vals:pb.map((p,i)=>rt6[i]?p/rt6[i]:null)}]}),
+ table:()=>({head:['Signing quarter','New logos','Live at +3m','Live ÷ contracted at +3m','Live ÷ contracted at +6m','Payback on contracted','Payback on live +3m','S&M per signed logo, $K','S&M per live logo, $K'],rows:Q.map((q,i)=>[q,logos[i],fv3[i]==null?'n/a':pct(fv3[i]),rt3[i]==null?'n/a':pct(rt3[i]),rt6[i]==null?'n/a':pct(rt6[i]),f1(pb[i])+' mo',rt3[i]?f1(pb[i]/rt3[i])+' mo':'n/a',f1(sm[i]*1000/logos[i]),fv3[i]?f1(sm[i]*1000/logos[i]/fv3[i]):'n/a'])}),
+ note:'A customer that never goes live was never really acquired, so payback on live ARR is the stricter test. The Q1-26 cohort went live more slowly than earlier cohorts, which pushes its payback past the bar.'});
+/* ---------- explorer ---------- */
+const ENG=(function(){const BASE={nrr:1.15,elas:0.85,real:0.9,gm:0.73,s0:1.84,s2:3.2,s3:2.1,lag:2,H:18,A0:48.2,new0:2.3,ramp:4,sref:2.4,e2:0.55};
+ function run(o){const p=Object.assign({},BASE,o);const k=p.new0/Math.pow(p.s0,p.elas);const f=S=>S<=p.sref?k*Math.pow(S,p.elas):k*Math.pow(p.sref,p.elas)*Math.pow(S/p.sref,p.e2);
+  const sc=T=>{const S=[];for(let t=0;t<p.H+p.lag;t++){S.push(p.s0+(T-p.s0)*Math.min(1,(t+1)/p.ramp));}return S;};
+  const mk=S=>{let A=p.A0,nt=0,sm=0;const arr=[];for(let t=0;t<p.H;t++){const sp=t-p.lag>=0?S[t-p.lag]:p.s0;const nw=f(sp);nt+=nw;sm+=S[t];A=A*Math.pow(p.nrr,1/12)+nw*p.real;arr.push(A);}return{arr,end:A,nt,sm};};
+  const h=mk(sc(p.s0)),o2=mk(sc(p.s2)),pl=mk(sc(p.s3));const mp=x=>{const dS=x.sm-h.sm,dN=x.nt-h.nt;return dN>0?dS/dN/p.gm*12:null;};
+  return{h,o:o2,p:pl,mpO:mp(o2),mpP:mp(pl),bar:18};}
+ return{BASE,run};})();
+const ST={nrr:1.15,elas:0.85,s2:3.2,s3:2.1,real:0.91};
+const fm=[];for(let i=0;i<18;i++){const m=(6+i)%12,y=26+Math.floor((6+i)/12);fm.push(MN[m]+'-'+y);}
+function sl(host,key,label,min,max,step,fmt){const lb=H('label',{},[document.createTextNode(label),H('b',{text:fmt(ST[key])})]);const inp=H('input',{type:'range',min,max,step,value:ST[key]});inp.addEventListener('input',()=>{ST[key]=+inp.value;lb.querySelector('b').textContent=fmt(ST[key]);drawScen();});lb.appendChild(inp);host.appendChild(lb);}
+const ctl=g('ctl');
+sl(ctl,'nrr','Net revenue retention (annual)',1.0,1.3,0.01,v=>Math.round(v*100)+'%');
+sl(ctl,'elas','Spend elasticity of new ARR',0.5,1.0,0.05,v=>v.toFixed(2));
+sl(ctl,'real','New bookings converting to ARR',0.8,1.0,0.01,v=>Math.round(v*100)+'%');
+sl(ctl,'s3','Measured S&M, $M a month',1.84,3.0,0.05,v=>'$'+v.toFixed(2)+'M');
+sl(ctl,'s2','Aggressive S&M, $M a month',2.0,4.5,0.1,v=>'$'+v.toFixed(1)+'M');
+const sc1={h:null},scen=card('c-scen',{title:'ARR by scenario, $M',sub:'Hold keeps S&M at $1.84M a month. Measured steps up gradually. Aggressive ramps hard to the level in the slider.',
+ legend:()=>[{name:'Hold',color:C3},{name:'Measured',color:C1},{name:'Aggressive',color:C2}],
+ draw:h=>{const r=ENG.run(ST);lineChart(h,{labels:fm,h:250,end:true,ymin:40,yfmt:v=>v,tfmt:v=>f1(v),efmt:v=>f1(v),aria:'ARR by scenario',series:[{name:'Hold',short:'Hold',color:C3,vals:r.h.arr},{name:'Measured',short:'Measured',color:C1,vals:r.p.arr},{name:'Aggressive',short:'Aggressive',color:C2,vals:r.o.arr}]});}});
+const scT=card('c-scenT',{title:'What each scenario costs and buys',sub:'Marginal payback compares the extra S&M to the extra new ARR versus Hold, at 73% gross margin.',
+ draw:h=>{const r=ENG.run(ST);const row=(n,x,mp)=>{const v=mp==null?'n/a':f1(mp)+' mo';const st=mp==null?null:(mp<=18?'green':(mp<=21?'amber':'red'));return [n,$m(x.end),$m(x.sm),v,st];};
+  const rows=[row('Hold',r.h,null),row('Measured',r.p,r.mpP),row('Aggressive',r.o,r.mpO)];const t=H('table'),th=H('thead'),tr=H('tr');['Scenario','Dec-27 ARR','S&M, 18 months','Marginal payback','vs 18-month bar'].forEach((x,i)=>tr.appendChild(H('th',{text:x,cls:i?'num':''})));th.appendChild(tr);t.appendChild(th);
+  const tb=H('tbody');rows.forEach(r2=>{const tr=H('tr');r2.slice(0,4).forEach((c,i)=>tr.appendChild(H('td',{text:c,cls:i?'num':''})));const td=H('td',{cls:'num'});if(r2[4])td.appendChild(H('span',{cls:'verdict',text:r2[4]==='green'?'Inside':r2[4]==='amber'?'Just over':'Over',style:'color:var(--'+(r2[4]==='green'?'good':r2[4]==='amber'?'warn':'neg')+')'}));else td.textContent='–';tr.appendChild(td);tb.appendChild(tr);});t.appendChild(tb);const w=H('div',{cls:'tw'});w.appendChild(t);h.appendChild(w);
+  const sens=H('table'),sh=H('thead'),sr=H('tr');['NRR','Hold','Measured','Aggressive'].forEach((x,i)=>sr.appendChild(H('th',{text:x,cls:i?'num':''})));sh.appendChild(sr);sens.appendChild(sh);const sb=H('tbody');
+  [1.0,1.15,1.25].forEach(n=>{const q=ENG.run(Object.assign({},ST,{nrr:n}));const tr=H('tr');[Math.round(n*100)+'%',$m(q.h.end),$m(q.p.end),$m(q.o.end)].forEach((c,i)=>tr.appendChild(H('td',{text:c,cls:i?'num':''})));sb.appendChild(tr);});sens.appendChild(sb);
+  h.appendChild(H('p',{cls:'note',text:'Sensitivity to NRR (other sliders as set):'}));const w2=H('div',{cls:'tw'});w2.appendChild(sens);h.appendChild(w2);}});
+function drawScen(){scen.render();scT.render();}
+/* resize / theme */
+let raf=0;const rs=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>redraws.forEach(r=>r.draw()));};
+new ResizeObserver(rs).observe(document.body);
+
+
+
+</script>
+</body></html>
